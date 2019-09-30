@@ -328,33 +328,33 @@ let main _ =
     let [| H; W |] = readInt32s()
     let a = readMatrix H |> Array2D.map int32
 
-    let ans = Array.create (H * W) (Array.empty)
+    let ans = Array.create (H * W) ""
     let mutable count = 0
     for hDiv2 in Seq.interval 0 (H / 2) do
         let h = hDiv2 * 2
         // 右
         for w in Seq.interval 0 (W - 1) do
             if isOdd (int64 a.[h, w]) then
-                ans.[count] <- [| h, w, h, w + 1 |]
+                ans.[count] <- string (h + 1) + " " + string (w + 1) + " " + string (h + 1) + " " + string (w + 2)
                 a.[h, w] <- a.[h, w] - 1
                 a.[h, w + 1] <- a.[h, w + 1] + 1
                 count <- count + 1
         // 下
         if isOdd (int64 a.[h, W - 1]) then
-            ans.[count] <- [| h, W - 1, h + 1, W - 1 |]
+            ans.[count] <- string (h + 1) + " " + string W + " " + string (h + 2) + " " + string W
             a.[h, W - 1] <- a.[h, W - 1] - 1
             a.[h + 1, W - 1] <- a.[h + 1, W - 1] + 1
             count <- count + 1
         // 左
         for w in Seq.interval 1 W |> Seq.rev do
             if isOdd (int64 a.[h + 1, w]) then
-                ans.[count] <- [| h + 1, w, h + 1, w - 1 |]
+                ans.[count] <- string (h + 2) + " " + string (w + 1) + " " + string (h + 2) + " " + string (w)
                 a.[h + 1, w] <- a.[h + 1, w] - 1
                 a.[h + 1, w - 1] <- a.[h + 1, w - 1] + 1
                 count <- count + 1
         // 下
         if isOdd (int64 a.[h + 1, 0]) && h + 2 < H then
-            ans.[count] <- [| h + 1, 0, h + 2, 0 |]
+            ans.[count] <- string (h + 2) + " " + string (1) + " " + string (h + 3) + " " + string (1)
             a.[h + 1, 0] <- a.[h + 1, 0] - 1
             a.[h + 2, 0] <- a.[h + 2, 0] + 1
             count <- count + 1
@@ -364,15 +364,14 @@ let main _ =
         // 右
         for w in Seq.interval 0 (W - 1) do
             if isOdd (int64 a.[h, w]) then
-                ans.[count] <- [| h, w, h, w + 1 |]
+                ans.[count] <- string (h + 1) + " " + string (w + 1) + " " + string (h + 1) + " " + string (w + 2)
                 a.[h, w] <- a.[h, w] - 1
                 a.[h, w + 1] <- a.[h, w + 1] + 1
                 count <- count + 1
 
     print count
     for i in Seq.interval 0 count do
-        let [| y1, x1, y2, x2 |] = ans.[i]
-        printfn "%d %d %d %d" (y1 + 1) (x1 + 1) (y2 + 1) (x2 + 1)
+        print ans.[i]
 
     // printGridGraph a
     0 // return an integer exit code
