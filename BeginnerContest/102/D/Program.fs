@@ -382,7 +382,6 @@ let main _ =
                 | _, (_, rri) -> rri
 
             let PQRS = seq {yield cut 0 l; yield cut l i; yield cut i r; yield cut r N}
-            
             Seq.max PQRS - Seq.min PQRS)
         |> Seq.min
     print ans
