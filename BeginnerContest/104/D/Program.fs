@@ -33,7 +33,6 @@ module InputOutputs =
 
         lines |> array2D
 
-
     let readInt32(): int32 = read() |> int32
     let readInt64(): int64 = read() |> int64
     let readInt32s(): int32 [] = reads() |> Array.map int32
@@ -255,7 +254,7 @@ module Algorithm =
             else if f ml > f mr then ternarySearchUpward l mr f e
             else ternarySearchUpward ml mr f e
 
-    let checkFlag (flag : int) (flagNumber : int) : bool =
+    let checkFlag (flag: int) (flagNumber: int): bool =
         if (flag < 0) then invalidArg "flag" "flag < 0"
         if (flagNumber < 0) then invalidArg "flagNumber" "flagNumber < 0"
         flag >>> flagNumber &&& 1 = 1
@@ -342,5 +341,21 @@ open NumericFunctions
 
 [<EntryPoint>]
 let main _ =
-
+    let S = read()
+    let N = S.Length
+    let dp = Array2D.zeroCreate (N + 1) 4
+    dp.[0,0] <- 1
+    let mods = {Mods.divisor = 1000000007}
+    for i in Seq.interval 0 N do
+        for j in Seq.interval 0 4 do
+            if S.[i] = '?' then
+                dp.[i+1,j] <- mods.Mul dp.[i,j] 3
+            else
+                dp.[i+1,j] <- dp.[i,j]
+        if S.[i] = 'A' || S.[i] = '?' then dp.[i+1,1] <- mods.Add dp.[i+1,1] dp.[i,0]
+        if S.[i] = 'B' || S.[i] = '?' then dp.[i+1,2] <- mods.Add dp.[i+1,2] dp.[i,1]
+        if S.[i] = 'C' || S.[i] = '?' then dp.[i+1,3] <- mods.Add dp.[i+1,3] dp.[i,2]
+    
+    let ans = dp.[N,3]
+    print ans
     0 // return an integer exit code
