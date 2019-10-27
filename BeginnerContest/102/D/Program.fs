@@ -355,31 +355,15 @@ let main _ =
     let ans =
         Seq.interval 2 (N + 1 - 2)
         |> Seq.map (fun i ->
-            let ll =
-                if i - 1 = 1 then 1
-                else binarySearch indexes (fun k -> cut 0 k < cut k i) 1 (i - 1)
-                |> (fun k -> abs (cut 0 k - cut k i), k)
-            let lr =
+            let l =
                 if i - 1 = 1 then 1
                 else binarySearch indexes (fun k -> cut 0 k >= cut k i) 1 (i - 1)
-                |> (fun k -> abs (cut 0 k - cut k i), k)
-            let l =
-                match ll, lr with
-                | (llabs, lli), (lrabs, _) when llabs < lrabs -> lli
-                | _, (_ ,lri) -> lri
+                |> (fun k -> if abs (cut 0 k - cut k i) < abs (cut 0 (k - 1) - cut (k - 1) i) then k else k - 1)
             
-            let rl =
-                if i + 1 = N - 1 then N - 1
-                else binarySearch indexes (fun k -> cut i k < cut k N) (i + 1) N - 1
-                |> (fun k -> abs (cut i k - cut k N), k)
-            let rr =
+            let r =
                 if i + 1 = N - 1 then N - 1
                 else binarySearch indexes (fun k -> cut i k >= cut k N) (i + 1) N - 1
-                |> (fun k -> abs (cut i k - cut k N), k)
-            let r =
-                match rl, rr with
-                | (rlabs, rli), (rrabs, _) when rlabs < rrabs -> rli
-                | _, (_, rri) -> rri
+                |> (fun k -> if abs (cut i k - cut k N) < abs (cut i (k - 1) - cut (k - 1) N) then k else k - 1)
 
             let PQRS = seq {yield cut 0 l; yield cut l i; yield cut i r; yield cut r N}
             Seq.max PQRS - Seq.min PQRS)
