@@ -342,33 +342,25 @@ open NumericFunctions
 
 [<EntryPoint>]
 let main _ =
-    let [|N;K|] = readInt64s ()
+    let NK = reads ()
+    let N = int32 NK.[0]
+    let K = int64 NK.[1]
     let A = readInt64s ()
     let F = readInt64s ()
     let ascA = Array.sort A
-    let ascF = Array.sort F
+    let dscF = Array.sortDescending F
+    let mutable l = -1L
+    let mutable r = pown 10L 12
+    while abs (l - r) > 1L do
+        let X = (l + r) / 2L
+        let sum =
+            Seq.interval 0 N
+            |> Seq.sumBy (fun i ->
+                max (ascA.[i] - X / dscF.[i]) 0L)
+        if sum <= K then
+            r <- X
+        else
+            l <- X
     
-    let cumA =
-        ascA
-        |> Array.scan (+) 0L
-    let okLeft =
-        match leftBinarySearch cumA (fun cum -> cum <= K) with
-        | Some i -> i
-        | None -> 0
-    
-    let cumRevA =
-        ascA
-        |> Array.rev
-        |> Array.scan (+) 0L
-        
-    let ans =
-        Seq.interval 0 okLeft
-        |> Seq.map (fun i ->
-            let restK = K - cumA.[i]
-            let okRight =
-                binarySearch cumRevA (fun cum -> cum <= restK) (int32 N - i) -1
-                |> fun k -> (int32 N - 1) - k
-            let traineds =
-                Seq.interval i (okRight + 1)
-            )
+    print r
     0 // return an integer exit code
