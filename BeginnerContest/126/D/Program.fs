@@ -353,7 +353,10 @@ let main _ =
     
     let colors = Array.zeroCreate N
     let reached = Array.zeroCreate N
-    let rec dfs (parent:int32) : unit =
+    let dfs = Stack<int32> ()
+    dfs.Push 0
+    while not (Seq.isEmpty dfs) do
+        let parent = dfs.Pop ()
         let rec loop (source : (int32 * int32) list)  =
             match source with
             | [] -> ()
@@ -366,10 +369,8 @@ let main _ =
                     else
                         colors.[child] <- if colors.[parent] = 0 then 1 else 0
                     reached.[child] <- true
-                    dfs child
+                    dfs.Push child
                     loop rest
         loop graph.[parent]
-    
-    dfs 0
     printColumn colors
     0 // return an integer exit code
