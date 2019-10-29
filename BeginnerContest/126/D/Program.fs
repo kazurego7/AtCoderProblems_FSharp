@@ -367,6 +367,7 @@ let main _ =
                         colors.[child] <- if colors.[parent] = 0 then 1 else 0
                     reached.[child] <- true
                     dfs child
+                    loop rest
         loop graph.[parent]
     
     dfs 0
