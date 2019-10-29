@@ -281,6 +281,8 @@ module DataStructure =
 
             member this.Find (u: Id) (v: Id): bool = root u = root v
 
+            member this.Root (u: int32) : Id = root u
+
     let reverseCompare (x: 'a) (y: 'a): int32 = compare x y * -1
 
     module PriorityQueue =
@@ -336,5 +338,20 @@ open NumericFunctions
 
 [<EntryPoint>]
 let main _ =
+    let [|N;M|] = readInt32s()
+    let XYZ = readMatrixInt32 M
+    let X = XYZ.[*, 0]
+    let Y = XYZ.[*, 1]
+    let Z = XYZ.[*, 2]
 
+    let uf = UnionFind.UnionFind N
+    for i in Seq.interval 0 M do
+        uf.Unite (X.[i] - 1) (Y.[i] - 1)
+    
+    let ans =
+        Seq.interval 0 N
+        |> Seq.groupBy uf.Root
+        |> Seq.length
+    
+    print ans
     0 // return an integer exit code
