@@ -338,5 +338,25 @@ open NumericFunctions
 
 [<EntryPoint>]
 let main _ =
+    let [|N;M;K|] = readInt32s ()
 
+    let mods = {Mods.divisor = 1000000007}
+    let sumX =
+        Seq.interval 1 M
+        |> Seq.fold (fun state d ->
+            mods.Add state (mods.Mul (mods.Mul (mods.Mul d (M - d)) N) N))
+            0
+        |> (fun x ->
+            let c = mods.Div (mods.Perm (N * M - 2) (K - 2)) (mods.Perm (K-2) (K-2))
+            mods.Mul x c)
+    let sumY =
+        Seq.interval 1 N
+        |> Seq.fold (fun state d ->
+            mods.Add state (mods.Mul (mods.Mul (mods.Mul d (N - d)) M) M))
+            0
+        |> (fun y ->
+            let c = mods.Div (mods.Perm (N * M - 2) (K - 2)) (mods.Perm (K-2) (K-2))
+            mods.Mul y c)
+    let ans = mods.Add sumX sumY
+    print ans
     0 // return an integer exit code
