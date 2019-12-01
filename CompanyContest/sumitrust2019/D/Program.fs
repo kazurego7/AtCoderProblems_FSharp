@@ -393,20 +393,20 @@ let main _ =
             let d100 = i / 100
             let d10 = (i - d100 * 100) / 10
             let d1 = i - d100 * 100 - d10 * 10
-            let d100s = (string d100).[0]
-            let d10s = (string d10).[0]
-            let d1s = (string d1).[0]
-            let dOK = Array.create 3 false
-            for k in Seq.interval 0 N do
-                if not dOK.[0] && S.[k] = d100s then
-                    dOK.[0] <- true
-                    for l in Seq.interval (k + 1) N do
-                        if not dOK.[1] && S.[l] = d10s then
-                            dOK.[1] <- true
-                            for m in Seq.interval (l + 1) N do
-                                if not dOK.[2] && S.[m] = d1s then dOK.[2] <- true
+            let d100c = (string d100).[0]
+            let d10c = (string d10).[0]
+            let d1c = (string d1).[0]
+
+            let rec loop n c =
+                if n >= N then (n, false)
+                elif S.[n] = c then (n, true)
+                else loop (n + 1) c
+
+            let (p, dOK0) = loop 0 d100c
+            let (q, dOK1) = loop (p + 1) d10c
+            let (r, dOK2) = loop (q + 1) d1c
             // if dOK.[0] && dOK.[1] && dOK.[2] then printfn "%A %A %A" d100 d10 d1
-            dOK.[0] && dOK.[1] && dOK.[2])
+            dOK0 && dOK1 && dOK2)
         |> Seq.length
     print ans
     0 // return an integer exit code
