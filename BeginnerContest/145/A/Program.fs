@@ -1,6 +1,5 @@
 ﻿module AtCoder
 
-
 open Microsoft.FSharp.Collections
 open System
 open System.Collections
@@ -21,7 +20,6 @@ module Array2D =
         let transposed = Array2D.zeroCreate (Array2D.length2 array) (Array2D.length1 array)
         transposed |> Array2D.mapi (fun i k _ -> array.[k, i])
 
-
 module InputOutputs =
     let read(): string = Console.ReadLine()
     let reads(): string [] = read().Split()
@@ -32,7 +30,6 @@ module InputOutputs =
             lines.[i] <- reads()
 
         lines |> array2D
-
 
     let readInt32(): int32 = read() |> int32
     let readInt64(): int64 = read() |> int64
@@ -74,6 +71,7 @@ module NumericFunctions =
             else b
 
         member this.Mod(a: int32) = this.Mod(int64 a)
+
         member this.Add (a: int32) (b: int32): int32 = (this.Mod a + this.Mod b) % this.divisor
 
         member this.Sub (a: int32) (b: int32): int32 =
@@ -83,6 +81,8 @@ module NumericFunctions =
 
         member this.Mul (a: int32) (b: int32): int32 =
             (int64 (this.Mod a) * int64 (this.Mod b)) % int64 this.divisor |> int32
+
+        member this.Div (a: int32) (b: int32): int32 = this.Mul a (this.Inv b)
 
         /// 二分累積 O(Log N)
         member this.Pow (b: int32) (n: int32): int32 =
@@ -99,8 +99,6 @@ module NumericFunctions =
 
         /// フェルマーの小定理より
         member this.Inv(a: int32): int32 = this.Pow a (this.divisor - 2)
-
-        member this.Div (a: int32) (b: int32): int32 = this.Mul a (this.Inv b)
 
         member this.Perm (n: int32) (k: int32): int32 =
             match (n, k) with
@@ -201,25 +199,13 @@ module NumericFunctions =
             List.toSeq ps
 
 module Algorithm =
-    let rec binarySearch (predicate: int64 -> bool) (ng: int64) (ok: int64): int64 =
-        match (ok, ng) with
+    let rec binarySearch (predicate: int64 -> bool) (exclusiveNg: int64) (exclusiveOk: int64): int64 =
+        match (exclusiveOk, exclusiveNg) with
         | (ok, ng) when abs (ok - ng) = 1L -> ok
         | _ ->
-            let mid = (ok + ng) / 2L
-            if predicate mid then binarySearch predicate ng mid
-            else binarySearch predicate mid ok
-
-    let leftBinarySearch (size: int64) (predicate: int64 -> bool): int64 option =
-        binarySearch predicate size -1L
-        |> fun ix ->
-            if ix = -1L then None
-            else Some ix
-
-    let rightBinarySearch (size: int64) (predicate: int64 -> bool): int64 option =
-        binarySearch predicate -1L size
-        |> fun ix ->
-            if ix = size then None
-            else Some ix
+            let mid = (exclusiveOk + exclusiveNg) / 2L
+            if predicate mid then binarySearch predicate exclusiveNg mid
+            else binarySearch predicate mid exclusiveOk
 
     let runLengthEncoding (source: string): seq<string * int32> =
         match source.Length with
@@ -249,18 +235,18 @@ module Algorithm =
             else if f ml > f mr then ternarySearchUpward l mr f e
             else ternarySearchUpward ml mr f e
 
-    let checkFlag (flag : int) (flagNumber : int) : bool =
+    let checkFlag (flag: int) (flagNumber: int): bool =
         if (flag < 0) then invalidArg "flag" "flag < 0"
         if (flagNumber < 0) then invalidArg "flagNumber" "flagNumber < 0"
         flag >>> flagNumber &&& 1 = 1
 
 module DataStructure =
+
     module UnionFind =
         type private Id = Int32
 
-        type UnionFind(n) =
+        type UnionFind(n: int32) =
             let mutable parent: Id [] = Array.init n id
-            let mutable size: int32 [] = Array.create n 1
 
             let rec root u =
                 if parent.[u] = u then
@@ -269,6 +255,8 @@ module DataStructure =
                     let rootParent = root parent.[u]
                     parent.[u] <- rootParent
                     rootParent
+
+            let mutable size: int32 [] = Array.create n 1
 
             member this.Unite (u: Id) (v: Id): unit =
                 if root u = root v then
@@ -281,7 +269,7 @@ module DataStructure =
 
             member this.Find (u: Id) (v: Id): bool = root u = root v
 
-            member this.Root (u: int32) : Id = root u
+            member this.Id(u: int32): Id = root u
 
     let reverseCompare (x: 'a) (y: 'a): int32 = compare x y * -1
 
@@ -296,6 +284,13 @@ module DataStructure =
             let mutable size = dict.Count
             new(values: seq<'a>) = PriorityQueue(values, compare)
 
+            member this.Peek =
+                if Seq.isEmpty dict then invalidOp "queue is Empty"
+
+                (Seq.head dict).Value |> Seq.head
+
+            member this.Size = size
+
             member this.Enqueue(item: 'a): unit =
                 if dict.ContainsKey item then
                     dict.[item].Enqueue(item)
@@ -304,13 +299,6 @@ module DataStructure =
                     added.Enqueue(item)
                     dict.Add(item, added)
                 size <- size + 1
-
-            member this.Peek =
-                if Seq.isEmpty dict then invalidOp "queue is Empty"
-
-                (Seq.head dict).Value |> Seq.head
-
-            member this.Size = size
 
             member this.Dequeue(): 'a =
                 if Seq.isEmpty dict then invalidOp "queue is Empty"
@@ -330,6 +318,46 @@ module DataStructure =
             interface IEnumerable with
                 member this.GetEnumerator() = (this :> IEnumerable<IEnumerable<'a>>).GetEnumerator() :> IEnumerator
 
+module Template =
+    open InputOutputs
+    /// 木構造の BFS ( DFS は、 order の Queue の部分を Stack にして、 Dequeue を Pop 、 Enqueue を Push にすれば良いだけ)
+    let TreeBFS() =
+        // 与えられた頂点数と辺
+        let N = readInt32()
+        let ab = readMatrixInt32 (N - 1)
+        let a = ab.[*, 0]
+        let b = ab.[*, 1]
+
+        // 木構造の初期化
+        let tree = Array.create N []
+
+        for i in Seq.interval 0 (N - 1) do
+            tree.[a.[i] - 1] <- (b.[i] - 1) :: tree.[a.[i] - 1]
+            tree.[b.[i] - 1] <- (a.[i] - 1) :: tree.[b.[i] - 1]
+
+        let order = new Queue<int32>()
+        order.Enqueue(0)
+        let reached = Array.create N false
+        reached.[0] <- true
+        let pruningCondition = false // 枝刈り条件
+
+        // bfs
+        while not (Seq.isEmpty order) do
+            let node = order.Dequeue()
+
+            // ************ノードの処理***************
+
+            // **************************************
+            let childs = List.filter (fun child -> not reached.[child] && not pruningCondition) tree.[node]
+
+            // ************エッジの処理***************
+            for child in childs do
+                ()
+            // **************************************
+            for child in childs do
+                order.Enqueue(child)
+                reached.[child] <- true
+
 
 open Algorithm
 open DataStructure
@@ -341,3 +369,4 @@ let main _ =
     let r = readInt32()
     print (r * r)
     0 // return an integer exit code
+ 
