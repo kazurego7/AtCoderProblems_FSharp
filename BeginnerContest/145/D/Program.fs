@@ -366,6 +366,16 @@ open NumericFunctions
 
 [<EntryPoint>]
 let main _ =
+    let [| X; Y |] = readInt32s()
 
+    let ans =
+        if 2 * X - Y < 0 || 2 * Y - X < 0 || (2 * X - Y) % 3 <> 0 || (2 * Y - X) % 3 <> 0 then
+            0
+        else
+            let n = (2 * X - Y) / 3
+            let m = (2 * Y - X) / 3
+            let mods = { Mods.divisor = 1000000007 }
+            mods.Div (mods.Perm (n + m) n) (mods.Perm n n)
+    print ans
     0 // return an integer exit code
  
