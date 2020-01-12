@@ -235,10 +235,10 @@ module Algorithm =
             else if f ml > f mr then ternarySearchUpward l mr f e
             else ternarySearchUpward ml mr f e
 
-    let checkFlag (flag: int) (flagNumber: int): bool =
-        if (flag < 0) then invalidArg "flag" "flag < 0"
+    let checkFlag (flag: int64) (flagNumber: int): bool =
+        if (flag < 0L) then invalidArg "flag" "flag < 0"
         if (flagNumber < 0) then invalidArg "flagNumber" "flagNumber < 0"
-        flag >>> flagNumber &&& 1 = 1
+        flag >>> flagNumber &&& 1L = 1L
 
     let rec permutaions (xs: list<'a>): list<list<'a>> =
         match xs with
@@ -382,9 +382,57 @@ open DataStructure
 open InputOutputs
 open NumericFunctions
 
+(*
+    XOR は各桁について独立に計算できることを考えて、式変形をしてみる(和は各桁で独立にならないことに注意)
+    Ai を10進数表記から2進数表記に変えてみる
+
+    B60i は Ai < 2^60 つまり、2進数で 桁数が 60 未満であることから
+    (Ai)10 = (B0i B1i B2i ... B60i)2
+
+    ∑ (Ai ⊕ Aj)   = ∑ (∑_k Bki ⊕ Bkj)
+                    = ∑_k (∑ (Bki ⊕ Bkj) )
+    f(k) = ∑ (Bki ⊕ Bkj)
+    とおくと
+    ∑ (Ai ⊕ Aj) = ∑_k f(k)
+
+    ここで、∑ (Bki ⊕ Bkj) について、XOR した結果が 1 であるものの個数がわかれば、それに 2^k を掛けたものが f(k) となることがわかる
+    
+    f(k) = ∑ (Bki ⊕ Bkj) = (XOR した結果が 1 であるものの個数) * 2^k
+
+    ここで f(k) で k を固定して考えてみる
+
+    ・∑ (Bki ⊕ Bkj) は、Bk から２つを選んでXORする組み合わせ全ての和であること
+    ・XOR が 1 となるのは、片方が 0 かつ、もう片方が 1 となるような組み合わせであること
+    以上のことをふまえると
+
+    (XOR した結果が 1 であるものの個数) 
+    = (Bk から2つを選ぶとき 片方が 0 かつ、もう片方が 1 であるような組み合わせの個数)
+    = (Bk が 0 であるものの個数) * (Bk が 1 であるものの個数)
+    
+    だとわかる
+
+    よって、
+    f (k) = (Bk が 0 であるものの個数) * (Bk が 1 であるものの個数) * 2^k
+    ∑ (Ai ⊕ Aj) = ∑_k f(k) = ∑_k (Bk が 0 であるものの個数) * (Bk が 1 であるものの個数) * 2^k
+
+    f (k) は O(N) で求めることができるので、全体での計算量は
+    O (N log (max Ai))
+*)
+
 [<EntryPoint>]
 let main _ =
     let N = readInt32 ()
     let A = readInt64s ()
+    let mods = {Mods.divisor = 1000000007}
+    let ans =
+        Seq.interval 0 60
+        |> Seq.map (fun k ->
+            let is0s =
+                A 
+                |> Seq.map (fun flag -> checkFlag flag k)
+            let x = is0s |> Seq.filter not |> Seq.length
+            let y = is0s |> Seq.filter id |> Seq.length
+            mods.Mul x (mods.Mul y (mods.Pow 2 k)))
+        |> Seq.fold mods.Add 0
+    print ans
     0 // return an integer exit code
- 
