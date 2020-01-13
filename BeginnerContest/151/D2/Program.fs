@@ -382,43 +382,56 @@ open NumericFunctions
 [<EntryPoint>]
 let main _ =
     let [| H; W |] = readInt32s()
-    let S = (readMatrix H).[*,0] |> Array.map (fun Si -> Seq.map string Si) |> array2D
-    
-    let ans = 
+
+    let S =
         Seq.interval 0 H
-        |> Seq.collect (fun h ->
-            Seq.interval 0 W
-            |> Seq.map (fun w ->
-                let G = Array2D.create (H*W) (H*W) (-1)
-                for h1 in Seq.interval 0 H do
-                    for w1 in Seq.interval 0 W do
-                        for h2 in Seq.interval 0 H do
-                            for w2 in Seq.interval 0 W do
-                                if h1 = h2 && w1 = w2 then
-                                    G.[h1*W + w1,h2*W + w2] <- 0
-                                else if h1 = h2 && w1 - 1 = w2 || h1 - 1 = h2 && w1 = w2 || h1 = h2 && w1 + 1 = w2 || h1 + 1 = h2 && w1 = w2 then
-                                    G.[h1*W + w1,h2*W + w2] <- 1
-                                    G.[h2*W + w2,h1*W + w1] <- 1
-                        
-                for hk in Seq.interval 0 H do
-                    for wk in Seq.interval 0 W do
-                        for hi in Seq.interval 0 H do
-                            for wi in Seq.interval 0 W do
-                                for hj in Seq.interval 0 H do
-                                    for wj in Seq.interval 0 W do
-                                        let k = hk * W + wk
-                                        let i = hi * W + wi
-                                        let j = hj * W + wj
-                                        if (G.[i,j] <> -1 && G.[i,k] <> -1 && G.[k,j] <> -1) then
-                                            G.[i,j] <- min G.[i,j] (G.[i,k] + G.[k,j])
-                
-                Seq.interval 0 (H * W)
-                |> Seq.collect (fun i ->
-                    Seq.interval 0 (H * W)
-                    |> Seq.map (fun k ->
-                       G.[i,k]))
-                |> Seq.max))
+        |> Seq.map (fun _ -> read() |> Seq.map string)
+        |> array2D
+
+    let ans =
+        Seq.interval 0 H
+        |> Seq.collect (fun i -> Seq.interval 0 W |> Seq.map (fun k -> i, k))
+        |> Seq.filter (fun (i,k) -> S.[i,k] <> "#")
+        |> Seq.map (fun (i, k) ->
+            // GridGraph BFS
+            let order = new Queue<int32 * int32>()
+            order.Enqueue((i, k))
+            let reached = Array2D.create H W false
+            reached.[i, k] <- true
+
+            let distance = Array2D.create H W 0
+
+            while not (Seq.isEmpty order) do
+                let (h0, w0) = order.Dequeue()
+
+                let allsides =
+                    [ yield (h0, w0 - 1) // left
+                      yield (h0 - 1, w0) // up
+                      yield (h0, w0 + 1) // right
+                      yield (h0 + 1, w0) ] // down
+                    |> List.filter (fun (h,w) -> 0 <= h && h < H && 0 <= w && w < W)
+
+                // ************ノードの処理***************
+
+                // **************************************
+
+                let pruningCondition = (fun h w -> S.[h, w] = "#") // 枝刈り条件
+                let nexts = allsides |> List.filter (fun (h, w) -> not reached.[h, w] && not (pruningCondition h w))
+
+                // ************エッジの処理***************
+                for (h, w) in nexts do
+                    distance.[h, w] <- distance.[h0, w0] + 1
+                // **************************************
+                for (h, w) in nexts do
+                    order.Enqueue(h, w)
+                    reached.[h, w] <- true
+
+            let mutable maxd = 0
+            distance |> Array2D.iter (fun d -> maxd <- max maxd d)
+
+            maxd)
         |> Seq.max
-                    
-    print ans      
+
+    print ans
+
     0 // return an integer exit code
