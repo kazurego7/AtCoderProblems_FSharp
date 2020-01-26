@@ -500,24 +500,29 @@ open NumericFunctions
 
 [<EntryPoint>]
 let main _ =
-    let N = read ()
+    let N = readInt32 ()
 
-    if (int32 N <= 9) then
-        print N
-    else
-        let Nh = Seq.head N |> string |> int32
-        let Nl = Seq.last N |> string |> int32
-        let Nm = Seq.take (N.Length - 1) N |> Seq.tail
+    let mutable C =
+        Seq.interval 0 10
+        |> Seq.collect (fun i ->
+            Seq.interval 0 10
+            |> Seq.map (fun k ->
+                ((i,k), 0)))
+        |> Map
 
-        let C =
-            Seq.interval 0 (int32 (log10 (float N)))
-            |> Seq.map (fun d ->
-                Seq.interval 0 10
-                |> Seq.collect (fun i ->
-                    Seq.interval 0 10
-                    |> Seq.map (fun j ->
-                        (i,j)))
-                |> Seq.filter (fun (i,j) ->
-                    i <= Nh && j <= Nl || i <= Nl && j <= Nh)
-                |> )
+    for i in Seq.interval 1 (N + 1) do
+        let iFirst = i |> string |> Seq.head |> string |> int
+        let iLast = i |> string |> Seq.last |> string |> int
+        C <- C.Add ((iFirst, iLast), (C.[(iFirst, iLast)] + 1))
+    
+    let ans = 
+        Seq.interval 1 10
+        |> Seq.collect (fun i ->
+            Seq.interval 1 10
+            |> Seq.map (fun k ->
+                ((i,k))))
+        |> Seq.sumBy (fun (i,k) ->
+            C.[(i,k)] * C.[k,i])
+    
+    print ans
     0 // return an integer exit code
