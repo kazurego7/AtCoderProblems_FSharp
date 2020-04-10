@@ -29,11 +29,11 @@ module InputOutputs =
         for i in Seq.interval 0 row do
             lines.[i] <- reads()
         lines |> array2D
-    
+
     let readMatrixNoSpace (row: int32): string [,] =
         let mutable lines = Array.zeroCreate row
         for i in Seq.interval 0 row do
-            lines.[i] <- read () |> Seq.map  string
+            lines.[i] <- read() |> Seq.map string
         lines |> array2D
 
     let readInt32(): int32 = read() |> int32
@@ -60,7 +60,7 @@ module InputOutputs =
             print item
 
     let inline printMatrix (matrix: 'a [,]): unit =
-        if matrix.Length = 0 then 
+        if matrix.Length = 0 then
             print ""
         else
             let height = matrix.[*, 0].Length
@@ -69,9 +69,9 @@ module InputOutputs =
                 |> Seq.map string
                 |> String.concat " "
                 |> print
-    
+
     let inline printMatrixNoSpace (matrix: 'a [,]): unit =
-        if matrix.Length = 0 then 
+        if matrix.Length = 0 then
             print ""
         else
             let height = matrix.[*, 0].Length
@@ -464,7 +464,7 @@ module Template =
                 order.Enqueue(y, x)
                 reached.[y, x] <- true
 
-    let WarshallFloyd () =
+    let WarshallFloyd() =
         // グラフの入力
         let [| N; M |] = readInt32s()
         let abc = readMatrixNoSpace M
@@ -478,9 +478,8 @@ module Template =
 
         for y in Seq.interval 0 N do
             for x in Seq.interval 0 N do
-                if y = x then
-                    G.[y,x] <- 0L
-        
+                if y = x then G.[y, x] <- 0L
+
         for i in Seq.interval 0 M do
             G.[a.[i], b.[i]] <- c.[i]
             G.[b.[i], a.[i]] <- c.[i]
@@ -488,9 +487,9 @@ module Template =
         for k in Seq.interval 0 N do
             for i in Seq.interval 0 N do
                 for j in Seq.interval 0 N do
-                    G.[i,j] <- min G.[i,j] (G.[i,k] + G.[k,j])
-        
-        
+                    G.[i, j] <- min G.[i, j] (G.[i, k] + G.[k, j])
+
+
 
 
 open Algorithm
@@ -500,5 +499,21 @@ open NumericFunctions
 
 [<EntryPoint>]
 let main _ =
+    let [| H; N |] = readInt32s()
+    let AB = readMatrixInt32 N
+    let A = AB.[*, 0]
+    let B = AB.[*, 1]
 
+    let inf = pown 10 8
+
+    let dp = Seq.replicate (H + 1) inf |> Seq.toArray
+    dp.[H] <- 0
+
+    for i in Seq.interval 0 (H + 1) |> Seq.rev do
+        for k in Seq.interval 0 N do
+            if i - A.[k] < 0
+            then dp.[0] <- min (dp.[i] + B.[k]) dp.[0]
+            else dp.[i - A.[k]] <- min (dp.[i] + B.[k]) dp.[i - A.[k]]
+
+    print dp.[0]
     0 // return an integer exit code
